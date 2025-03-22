@@ -19,6 +19,9 @@ import DownloadIcon from '@mui/icons-material/Download';
 import AutorenewIcon from '@mui/icons-material/Autorenew';
 import EmojiEmotionsIcon from '@mui/icons-material/EmojiEmotions';
 
+// 从环境变量中获取 API Key
+const HUGGINGFACE_API_KEY = process.env.REACT_APP_HUGGINGFACE_API_KEY;
+
 // 简单的重试函数
 async function fetchWithRetry(url, options, maxRetries = 3) {
   const timeout = 30000; // 30秒超时
@@ -52,7 +55,6 @@ async function fetchWithRetry(url, options, maxRetries = 3) {
         throw error;
       }
       
-      // 使用递增的等待时间，但不要等待太久
       await new Promise(resolve => setTimeout(resolve, Math.min(500 * (i + 1), 2000)));
     }
   }
@@ -67,8 +69,7 @@ function App() {
 
   const generateMemes = async () => {
     try {
-      if (!process.env.REACT_APP_HUGGINGFACE_API_KEY || 
-          process.env.REACT_APP_HUGGINGFACE_API_KEY === 'hf_xxx') {
+      if (!HUGGINGFACE_API_KEY || HUGGINGFACE_API_KEY === 'hf_xxx') {
         setError('请先设置 HuggingFace API Key！\n1. 访问 https://huggingface.co/settings/tokens 获取 API Key\n2. 将 API Key 填入 .env 文件中');
         return;
       }
@@ -84,7 +85,6 @@ function App() {
       const totalImages = 4;
       const images = [];
       
-      // 使用 Promise.race 并行处理请求
       for (let i = 0; i < totalImages; i++) {
         try {
           const response = await Promise.race([
@@ -93,7 +93,7 @@ function App() {
               {
                 method: "POST",
                 headers: {
-                  Authorization: `Bearer ${process.env.REACT_APP_HUGGINGFACE_API_KEY}`,
+                  Authorization: `Bearer ${HUGGINGFACE_API_KEY}`,
                   "Content-Type": "application/json",
                 },
                 body: JSON.stringify({
@@ -119,9 +119,7 @@ function App() {
           );
           
           images.push(base64Image);
-          setProgress((i + 1) * 25); // 更新进度
-          
-          // 立即显示已生成的图片
+          setProgress((i + 1) * 25);
           setGeneratedImages([...images]);
         } catch (err) {
           console.error('单张图片生成失败:', err);
